@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="餐具盤點">
+<title>巨蛋外場餐具盤點</title>
+<style>
+:root{
+  --paper:#F3EEE1;
+  --paper-deep:#EAE3D0;
+  --line:#CFC7AE;
+  --ink:#23262A;
+  --ink-soft:#63615A;
+  --ink-faint:#9A9587;
+  --red:#C41E2E;
+  --red-soft:#F2D9D6;
+  --amber:#B8791F;
+  --amber-soft:#F1E1C4;
+  --teal:#2F6F62;
+  --clip:#8C8A82;
+  --radius:10px;
+  --shadow: 0 1px 0 rgba(35,38,42,0.06);
+  --mono: 'Courier New', Courier, monospace;
+  --hand: 'Comic Sans MS', 'Segoe Print', cursive;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    repeating-linear-gradient(180deg, transparent, transparent 37px, var(--line) 38px),
+    var(--paper);
+  color:var(--ink);
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  min-height:100vh;
+  padding-bottom:100px;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px;}
+.clipboard-head{background:var(--paper); border-bottom:2px solid var(--ink); padding-top:22px;}
+.clip{
+  width:78px;height:34px; margin:0 auto -17px;
+  background:linear-gradient(180deg,#B7B4AA,var(--clip));
+  border-radius:8px 8px 4px 4px; border:1px solid #6E6C64; position:relative;
+  box-shadow:0 3px 4px rgba(0,0,0,0.18);
+}
+.clip::after{
+  content:""; position:absolute; left:50%; top:8px; width:34px; height:10px; margin-left:-17px;
+  border-radius:5px; background:var(--paper-deep); border:1px solid #A6A18C;
+}
+.head-inner{max-width:720px;margin:0 auto;padding:26px 16px 14px;text-align:center;}
+.eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--ink-soft); text-transform:uppercase;}
+h1{font-size:26px; margin:6px 0 4px; letter-spacing:.01em; font-weight:900;}
+.date-row{display:flex; align-items:center; justify-content:center; gap:8px; font-family:var(--mono); font-size:13px; color:var(--ink-soft); flex-wrap:wrap;}
+.date-row input[type=date]{font-family:var(--mono); font-size:13px; border:1px solid var(--line); background:#fff; border-radius:6px; padding:4px 6px; color:var(--ink);}
+.session-select{font-family:var(--mono); font-size:12px; border:1px solid var(--line); background:#fff; border-radius:6px; padding:4px 6px; color:var(--ink);}
+.progress-bar{height:6px; background:var(--paper-deep); border-radius:3px; overflow:hidden; margin:14px 0 2px; border:1px solid var(--line);}
+.progress-fill{height:100%; background:var(--red); width:0%; transition:width .35s ease;}
+.stat-row{display:flex; justify-content:space-between; font-size:12px; color:var(--ink-soft); font-family:var(--mono); margin-bottom:14px;}
+.stat-row b{color:var(--ink); font-weight:700;}
+.controls{padding:12px 0; background:var(--paper);}
+.search-box{display:flex; align-items:center; gap:8px; background:#fff; border:1.5px solid var(--ink); border-radius:8px; padding:9px 12px; box-shadow:var(--shadow);}
+.search-box input{border:none; outline:none; font-size:15px; flex:1; background:transparent; color:var(--ink);}
+.search-box input::placeholder{color:var(--ink-faint);}
+.chips{display:flex; gap:6px; overflow-x:auto; margin-top:10px; padding-bottom:2px;}
+.chip{flex:0 0 auto; font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:99px; border:1.5px solid var(--ink); background:#fff; color:var(--ink); cursor:pointer; white-space:nowrap; user-select:none;}
+.chip.active{background:var(--ink); color:var(--paper);}
+.category{margin-top:22px;}
+.category-head{display:flex; align-items:baseline; justify-content:space-between; border-left:5px solid var(--cat-color, var(--ink)); padding:2px 0 2px 10px; margin-bottom:8px;}
+.category-head h2{font-size:16px; margin:0; font-weight:700; letter-spacing:.01em;}
+.category-head .sub{font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);}
+.item-list{display:flex; flex-direction:column; gap:8px;}
+.item-row{position:relative; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:10px 30px 10px 12px; box-shadow:var(--shadow); display:grid; grid-template-columns:1fr auto; gap:6px 10px; align-items:center; transition:background .25s ease, border-color .25s ease;}
+.item-row.filled{background:var(--red-soft); border-color:#E3B7B4;}
+.item-row.flag{border-left:4px solid var(--amber);}
+.item-name{font-size:14.5px; font-weight:600; line-height:1.35;}
+.item-name .flag-tag{display:inline-block; margin-left:6px; font-size:10px; font-weight:700; color:var(--amber); background:var(--amber-soft); padding:1px 6px; border-radius:5px; vertical-align:1px; letter-spacing:.02em;}
+.item-price{font-family:var(--mono); font-size:11.5px; color:var(--ink-soft); margin-top:2px; display:flex; align-items:center; gap:4px;}
+.price-input{width:58px; border:none; border-bottom:1px dashed var(--ink-faint); background:transparent; font-family:var(--mono); font-size:11.5px; color:var(--ink-soft); padding:0 2px;}
+.price-input::placeholder{color:var(--ink-faint);}
+.del-btn{position:absolute; top:8px; right:8px; width:22px; height:22px; border-radius:50%; border:1px solid var(--line); background:var(--paper); color:var(--ink-soft); font-size:13px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;}
+.del-btn:active{background:var(--red); color:#fff; border-color:var(--red);}
+.add-panel{background:#fff; border:1.5px dashed var(--ink); border-radius:var(--radius); padding:14px; margin-top:12px;}
+.add-panel .field-row{display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;}
+.add-panel label{display:block; font-size:11px; color:var(--ink-soft); margin-bottom:3px;}
+.add-panel input[type=text], .add-panel input[type=number], .add-panel select{
+  width:100%; border:1px solid var(--line); border-radius:6px; padding:7px 8px; font-size:14px; background:var(--paper); color:var(--ink);
+}
+.add-panel .field{flex:1; min-width:110px;}
+.add-panel .btn-row{display:flex; gap:8px; justify-content:flex-end; margin-top:4px;}
+.add-panel .btn-row button{font-size:13px; font-weight:700; padding:7px 14px; border-radius:8px; cursor:pointer;}
+.add-panel .btn-confirm{background:var(--red); color:#fff; border:1.5px solid var(--red);}
+.add-panel .btn-cancel{background:transparent; color:var(--ink-soft); border:1.5px solid var(--line);}
+.add-toggle{display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:var(--ink); background:#fff; border:1.5px dashed var(--ink); border-radius:8px; padding:8px 14px; cursor:pointer; margin-top:14px;}
+.cat-select{margin-top:4px; font-size:11px; font-family:var(--mono); color:var(--ink-soft); border:1px solid var(--line); border-radius:6px; padding:2px 4px; background:var(--paper); max-width:140px;}
+.cat-manage-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.cat-swatch{width:14px; height:14px; border-radius:50%; flex:0 0 auto; border:1px solid rgba(0,0,0,0.15);}
+.cat-manage-row input[type=text]{flex:1; border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:13.5px; background:var(--paper); color:var(--ink);}
+.del-btn-inline{position:static; flex:0 0 auto;}
+.add-new-cat-row{display:flex; gap:8px; margin-top:10px;}
+.add-new-cat-row input{flex:1; border:1px solid var(--line); border-radius:6px; padding:7px 8px; font-size:14px; background:var(--paper); color:var(--ink);}
+.add-new-cat-row button{font-size:13px; font-weight:700; padding:7px 14px; border-radius:8px; cursor:pointer; background:var(--red); color:#fff; border:1.5px solid var(--red);}
+.restore-link{display:block; text-align:center; font-size:11.5px; color:var(--ink-faint); margin-top:10px; text-decoration:underline; cursor:pointer; background:none; border:none;}
+.link-btn{display:block; margin:12px auto 0; font-size:12.5px; font-weight:700; color:var(--ink); background:#fff; border:1.5px solid var(--ink); border-radius:99px; padding:6px 14px; cursor:pointer;}
+.admin-section{margin-top:22px;}
+.admin-section h3{font-size:15px; margin:0 0 8px; font-weight:700; border-left:4px solid var(--red); padding-left:8px;}
+.admin-section p.hint{font-size:12px; color:var(--ink-soft); margin:-4px 0 10px;}
+.item-manage-row{display:flex; align-items:center; gap:6px; margin-bottom:8px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px;}
+.item-manage-row input[type=text]{flex:1.6; min-width:0; border:1px solid var(--line); border-radius:6px; padding:6px 7px; font-size:13px; background:var(--paper); color:var(--ink);}
+.item-manage-row input[type=number]{flex:0.8; min-width:0; width:64px; border:1px solid var(--line); border-radius:6px; padding:6px 7px; font-size:13px; background:var(--paper); color:var(--ink);}
+.item-manage-row select{flex:1; min-width:0; border:1px solid var(--line); border-radius:6px; padding:6px 4px; font-size:12px; background:var(--paper); color:var(--ink);}
+.stat-cards{display:flex; gap:8px; margin-bottom:14px;}
+.stat-card{flex:1; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; box-shadow:var(--shadow);}
+.stat-card .label{font-size:11.5px; color:var(--ink-soft);}
+.stat-card .value{font-size:19px; font-weight:900; margin-top:2px;}
+.stat-card .delta{font-family:var(--mono); font-size:11px; margin-top:2px;}
+.delta.up{color:var(--teal);}
+.delta.down{color:var(--red);}
+.bar-row{margin-bottom:9px;}
+.bar-row .bar-label{display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:3px;}
+.bar-row .bar-label span:last-child{font-family:var(--mono); color:var(--ink-soft);}
+.bar-track{height:9px; background:var(--paper-deep); border-radius:5px; overflow:hidden; border:1px solid var(--line);}
+.bar-fill{height:100%; background:var(--teal); border-radius:5px 0 0 5px;}
+.restock-row{display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin-bottom:6px; font-size:12.5px;}
+.restock-row .rr-main{flex:1; min-width:0;}
+.restock-row .rr-date{font-family:var(--mono); color:var(--ink-soft); font-size:11px;}
+.month-input{font-family:var(--mono); font-size:13px; border:1px solid var(--line); background:#fff; border-radius:6px; padding:5px 8px; color:var(--ink);}
+.item-amount{grid-column:2/3; grid-row:1/3; font-family:var(--mono); font-size:13px; color:var(--teal); font-weight:700; text-align:right; align-self:center; min-width:64px;}
+.item-amount.empty{color:var(--ink-faint); font-weight:400;}
+.qty-control{grid-column:1/2; display:flex; align-items:center; gap:8px; margin-top:2px;}
+.qty-btn{width:30px; height:30px; border-radius:8px; border:1.5px solid var(--ink); background:var(--paper); color:var(--ink); font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; user-select:none;}
+.qty-btn:active{background:var(--ink); color:var(--paper);}
+.qty-input{width:64px; text-align:center; font-family:var(--hand); font-size:22px; color:var(--red); border:none; border-bottom:2px dashed var(--red); background:transparent; outline:none;}
+.qty-input::placeholder{color:var(--ink-faint); font-family:inherit; font-size:13px;}
+.footer-bar{position:fixed; left:0; right:0; bottom:0; z-index:40; background:var(--ink); color:var(--paper); padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; box-shadow:0 -2px 10px rgba(0,0,0,0.18);}
+.save-indicator{font-family:var(--mono); font-size:11px; color:#C9C6BC; flex:1;}
+.footer-btns{display:flex; gap:8px;}
+.btn{font-size:13px; font-weight:700; cursor:pointer; padding:9px 14px; border-radius:8px; border:1.5px solid var(--paper); background:transparent; color:var(--paper);}
+.btn.primary{background:var(--red); border-color:var(--red); color:#fff;}
+.btn:active{transform:translateY(1px);}
+.empty-state{text-align:center; padding:40px 20px; color:var(--ink-soft); font-size:14px;}
+@media (min-width:560px){
+  .item-row{grid-template-columns:1fr auto auto;}
+  .qty-control{grid-column:2/3;}
+  .item-amount{grid-column:3/4; grid-row:1/2;}
+}
+</style>
+</head>
+<body>
+<noscript>
+  <div style="max-width:480px;margin:60px auto;padding:20px;border:2px solid #C41E2E;border-radius:10px;background:#F2D9D6;color:#23262A;font-family:-apple-system,sans-serif;text-align:center;">
+    這個網頁需要開啟 JavaScript 才能顯示內容。<br><br>
+    請改用手機的 <b>Safari</b> 或 <b>Chrome</b> 瀏覽器開啟這個檔案，不要用 LINE／信箱內建的預覽功能。
+  </div>
+</noscript>
+<div id="staticNotice" style="max-width:480px;margin:16px auto 0;padding:14px 16px;border:2px dashed #C41E2E;border-radius:10px;background:#F2D9D6;color:#23262A;font-family:-apple-system,sans-serif;font-size:13.5px;text-align:center;">
+  如果這則提示一直沒有消失、下面看不到盤點內容，代表目前的開啟方式不支援互動網頁。<br><br>
+  請改用 <b>Safari</b>（iPhone）或 <b>Chrome</b>（Android）開啟這個檔案：<br>
+  長按檔案 → 分享 → 選擇瀏覽器開啟，不要用 LINE 或信箱內建的預覽器。
+</div>
+
+<div id="page-count">
+<div class="clipboard-head">
+  <div class="clip"></div>
+  <div class="head-inner">
+    <div class="eyebrow">巨蛋外場 · 盤點作業</div>
+    <h1>餐具盤點</h1>
+    <div class="date-row">
+      <span>盤點日期</span>
+      <input type="date" id="dateInput">
+      <span>｜</span>
+      <select class="session-select" id="sessionSelect"><option value="">（載入紀錄中…）</option></select>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="stat-row">
+      <span>已盤點 <b id="statCount">0</b> / <span id="statTotal">0</span> 項</span>
+      <span>已盤點總值 <b id="statValue">$0</b></span>
+    </div>
+    <button class="link-btn" id="openAdminBtn" type="button">⚙ 後台管理（品項／分類／進貨）</button>
+    <button class="link-btn" id="openAnalyticsBtn" type="button">📊 數據分析（本月庫存／進貨）</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="controls">
+    <div class="search-box">
+      <span>搜尋</span>
+      <input type="text" id="searchInput" placeholder="輸入品項名稱…">
+    </div>
+    <div class="chips" id="chipRow"></div>
+  </div>
+  <div id="categoryContainer"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">找不到符合條件的品項，換個關鍵字或分類試試。</div>
+</div>
+
+<div class="footer-bar">
+  <div class="save-indicator" id="saveIndicator">已載入本機資料</div>
+  <div class="footer-btns">
+    <button class="btn" id="exportBtn">匯出 CSV</button>
+    <button class="btn primary" id="resetBtn">清空重新盤點</button>
+  </div>
+</div>
+</div>
+
+<div id="page-admin" style="display:none;">
+  <div class="clipboard-head">
+    <div class="clip"></div>
+    <div class="head-inner">
+      <button class="link-btn" id="backToCountBtn" type="button" style="margin-bottom:8px;">← 返回盤點</button>
+      <div class="eyebrow">巨蛋外場 · 後台管理</div>
+      <h1>品項與分類管理</h1>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="admin-section">
+      <h3>新增品項</h3>
+      <div class="add-panel">
+        <div class="field-row">
+          <div class="field">
+            <label for="newItemName">品項名稱</label>
+            <input type="text" id="newItemName" placeholder="例如：小茶盤">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="newItemPrice">單價（可留白）</label>
+            <input type="number" id="newItemPrice" placeholder="例如：45">
+          </div>
+          <div class="field">
+            <label for="newItemCat">分類</label>
+            <select id="newItemCat"></select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn-cancel" id="cancelAddBtn">清空欄位</button>
+          <button type="button" class="btn-confirm" id="confirmAddBtn">新增品項</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>細項管理（品項名稱／金額／分類）</h3>
+      <p class="hint">直接修改下面欄位即可即時儲存，不用另外按確定。</p>
+      <div id="itemManageList"></div>
+    </div>
+
+    <div class="admin-section">
+      <h3>管理分類</h3>
+      <div class="add-panel">
+        <div id="catManageList"></div>
+        <div class="add-new-cat-row">
+          <input type="text" id="newCatName" placeholder="新分類名稱，例如：外帶用品">
+          <button type="button" id="confirmAddCatBtn">新增分類</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>進貨管理</h3>
+      <p class="hint">記錄每次進貨的品項與數量，數據分析頁會依日期自動統計成「本月進貨」。</p>
+      <div class="add-panel">
+        <div class="field-row">
+          <div class="field">
+            <label for="restockDate">進貨日期</label>
+            <input type="date" id="restockDate">
+          </div>
+          <div class="field">
+            <label for="restockItem">品項</label>
+            <select id="restockItem"></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="restockQty">進貨數量</label>
+            <input type="number" id="restockQty" placeholder="例如：50">
+          </div>
+          <div class="field">
+            <label for="restockCost">單位成本（可留白）</label>
+            <input type="number" id="restockCost" placeholder="例如：20">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="restockNote">備註（可留白）</label>
+            <input type="text" id="restockNote" placeholder="例如：正明洋叫貨">
+          </div>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn-confirm" id="confirmRestockBtn">新增進貨紀錄</button>
+        </div>
+      </div>
+      <div id="restockList" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="admin-section" style="text-align:center;">
+      <button class="restore-link" id="restoreBtn" type="button">還原成預設清單與分類</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-analytics" style="display:none;">
+  <div class="clipboard-head">
+    <div class="clip"></div>
+    <div class="head-inner">
+      <button class="link-btn" id="backFromAnalyticsBtn" type="button" style="margin-bottom:8px;">← 返回盤點</button>
+      <div class="eyebrow">巨蛋外場 · 數據分析</div>
+      <h1>本月庫存與進貨</h1>
+      <div class="date-row">
+        <span>選擇月份</span>
+        <input type="month" class="month-input" id="analyticsMonth">
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="admin-section" style="margin-top:16px;">
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="label">本月進貨數量</div>
+          <div class="value" id="anaRestockQty">0</div>
+          <div class="delta" id="anaRestockQtyDelta"></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">本月進貨成本</div>
+          <div class="value" id="anaRestockCost">$0</div>
+          <div class="delta" id="anaRestockCostDelta"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>本月庫存（最新一次盤點）</h3>
+      <div id="anaInventorySummary"></div>
+    </div>
+
+    <div class="admin-section">
+      <h3>本月進貨明細（依品項加總）</h3>
+      <div id="anaRestockBars"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const DEFAULT_ITEMS = [
+  {id:'pearl_cup', name:'珍珠杯 430ml（B0416聖馬利諾杯）', price:36, cat:'cup'},
+  {id:'diamond_cup', name:'菱形杯 430ml（BP02809M）', price:55, cat:'cup'},
+  {id:'bear_cup', name:'熊熊杯（蘇打杯）', price:68, cat:'cup'},
+  {id:'clear_pot', name:'透明花茶壺（含蓋子$70）', price:312, cat:'pot'},
+  {id:'white_pot', name:'白色花茶壺', price:140, cat:'pot'},
+  {id:'candle', name:'燭台', price:168, cat:'tool'},
+  {id:'latte_cup', name:'拿鐵杯', price:110, cat:'cup'},
+  {id:'latte_plate', name:'拿鐵盤', price:120, cat:'plate'},
+  {id:'cappu_cup', name:'卡布杯', price:50, cat:'cup'},
+  {id:'cappu_plate', name:'卡布盤', price:50, cat:'plate'},
+  {id:'tea_plate', name:'花茶盤', price:30, cat:'plate'},
+  {id:'tea_cup', name:'花茶杯', price:null, cat:'pot'},
+  {id:'gp_mug', name:'GP馬克杯', price:138, cat:'cup', flag:'叫貨'},
+  {id:'stir_stick', name:'長調棒', price:25, cat:'tool'},
+  {id:'small_bowl', name:'小湯碗', price:42.25, cat:'bowl'},
+  {id:'big_bowl', name:'大湯碗', price:62, cat:'bowl'},
+  {id:'us_cup', name:'205美式水杯', price:30, cat:'cup'},
+  {id:'kettle', name:'水壺', price:72, cat:'pot', flag:'叫貨'},
+  {id:'basket', name:'竹籃', price:100, cat:'tool'},
+  {id:'knife', name:'刀子', price:30, cat:'tool'},
+  {id:'fork', name:'叉子', price:12, cat:'tool'},
+  {id:'spoon', name:'湯匙', price:12, cat:'tool'},
+  {id:'set_spoon', name:'定食湯匙', price:30, cat:'tool'},
+  {id:'plain_spoon', name:'素面小尖匙', price:10, cat:'tool'},
+  {id:'chopsticks', name:'筷子（雙）', price:10, cat:'tool'},
+  {id:'kid_bowl', name:'兒童碗', price:25, cat:'kid'},
+  {id:'kid_spoon', name:'兒童湯匙', price:15, cat:'kid'},
+  {id:'kid_plate', name:'兒童盤', price:79, cat:'kid'},
+  {id:'share_plate', name:'分享盤', price:45, cat:'plate'},
+  {id:'souffle_plate', name:'舒芙蕾白圓盤', price:152, cat:'plate', flag:'叫貨'},
+  {id:'gold_plate', name:'小金邊方碟（烤布蕾）', price:48, cat:'plate'},
+  {id:'big_plate', name:'大方碟', price:43, cat:'plate'},
+  {id:'brulee_base', name:'烤布蕾底盤', price:null, cat:'plate'},
+  {id:'sauce_pot', name:'木柄醬料盅', price:50, cat:'tool'},
+];
+
+const DEFAULT_CATEGORIES = [
+  {key:'cup',   label:'杯具類',    color:'#C41E2E'},
+  {key:'pot',   label:'壺具/茶具類', color:'#2F6F62'},
+  {key:'plate', label:'盤碟類',    color:'#B8791F'},
+  {key:'tool',  label:'餐具/器具類', color:'#4A5568'},
+  {key:'kid',   label:'兒童系列',   color:'#7C5CBF'},
+  {key:'bowl',  label:'湯碗類',    color:'#3E7CB1'},
+];
+const COLOR_PALETTE = ['#C41E2E','#2F6F62','#B8791F','#4A5568','#7C5CBF','#3E7CB1','#A2557A','#4C7A3F','#8C6A4E','#457B9D'];
+const CATEGORY_KEY = 'tableware-categories';
+const UNCATEGORIZED = {key:'uncategorized', label:'未分類', color:'#8C8A82'};
+let CATEGORIES = [];
+
+function loadCategories(){
+  try{
+    const raw = localStorage.getItem(CATEGORY_KEY);
+    if(raw){ CATEGORIES = JSON.parse(raw); ensureUncategorized(); return; }
+  }catch(e){ /* fall through */ }
+  CATEGORIES = DEFAULT_CATEGORIES.map(c => ({...c}));
+  saveCategories();
+}
+function saveCategories(){
+  try{ localStorage.setItem(CATEGORY_KEY, JSON.stringify(CATEGORIES)); }catch(e){ /* ignore */ }
+}
+function ensureUncategorized(){
+  if(!CATEGORIES.some(c => c.key === UNCATEGORIZED.key)) CATEGORIES.push({...UNCATEGORIZED});
+}
+function addCategory(label){
+  const nextColor = COLOR_PALETTE[CATEGORIES.length % COLOR_PALETTE.length];
+  const key = 'cat_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  CATEGORIES.push({key, label, color: nextColor});
+  saveCategories();
+}
+function renameCategory(key, newLabel){
+  const cat = CATEGORIES.find(c => c.key === key);
+  if(cat) cat.label = newLabel;
+  saveCategories();
+}
+function deleteCategory(key){
+  if(CATEGORIES.length <= 1) return false;
+  ensureUncategorized();
+  ITEMS.forEach(i => { if(i.cat === key) i.cat = UNCATEGORIZED.key; });
+  CATEGORIES = CATEGORIES.filter(c => c.key !== key);
+  saveCategories();
+  saveCatalog();
+  return true;
+}
+
+const CATALOG_KEY = 'tableware-catalog';
+const RESTOCK_KEY = 'tableware-restocks';
+let ITEMS = [];
+let restocks = [];
+let counts = {};
+let activeCategory = 'all';
+let searchTerm = '';
+let saveTimer = null;
+let currentKey = null;
+let storageOK = true;
+
+const $ = (sel) => document.querySelector(sel);
+const fmtMoney = (n) => '$' + n.toLocaleString('en-US', {maximumFractionDigits:2});
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function storageKey(dateStr){ return 'tableware-count:' + dateStr; }
+
+function loadCatalog(){
+  try{
+    const raw = localStorage.getItem(CATALOG_KEY);
+    if(raw){ ITEMS = JSON.parse(raw); return; }
+  }catch(e){ /* fall through to defaults */ }
+  ITEMS = DEFAULT_ITEMS.map(i => ({...i}));
+  saveCatalog();
+}
+function saveCatalog(){
+  try{ localStorage.setItem(CATALOG_KEY, JSON.stringify(ITEMS)); }catch(e){ /* ignore */ }
+}
+function slugify(name){
+  return 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+}
+function addNewItem(name, price, cat){
+  ITEMS.push({id: slugify(name), name: name, price: (price === '' || price === null || isNaN(price)) ? null : Number(price), cat: cat});
+  saveCatalog();
+}
+function deleteItem(id){
+  ITEMS = ITEMS.filter(i => i.id !== id);
+  delete counts[id];
+  saveCatalog();
+  queueSave();
+}
+function updateItemPrice(id, val){
+  const item = ITEMS.find(i => i.id === id);
+  if(!item) return;
+  item.price = (val === '' || val === null || isNaN(val)) ? null : Number(val);
+  saveCatalog();
+}
+function updateItemName(id, val){
+  const item = ITEMS.find(i => i.id === id);
+  if(!item || !val.trim()) return;
+  item.name = val.trim();
+  saveCatalog();
+}
+function updateItemCat(id, val){
+  const item = ITEMS.find(i => i.id === id);
+  if(!item) return;
+  item.cat = val;
+  saveCatalog();
+}
+
+function loadRestocks(){
+  try{
+    const raw = localStorage.getItem(RESTOCK_KEY);
+    restocks = raw ? JSON.parse(raw) : [];
+  }catch(e){ restocks = []; }
+}
+function saveRestocks(){
+  try{ localStorage.setItem(RESTOCK_KEY, JSON.stringify(restocks)); }catch(e){ /* ignore */ }
+}
+function addRestock(entry){
+  restocks.push({id:'rs_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), ...entry});
+  saveRestocks();
+}
+function deleteRestock(id){
+  restocks = restocks.filter(r => r.id !== id);
+  saveRestocks();
+}
+
+function loadSession(dateStr){
+  currentKey = storageKey(dateStr);
+  counts = {};
+  try{
+    const raw = localStorage.getItem(currentKey);
+    if(raw) counts = JSON.parse(raw);
+    storageOK = true;
+  }catch(e){
+    storageOK = false;
+  }
+  render();
+  updateSaveIndicator(storageOK ? '已載入本機資料' : '此瀏覽器無法儲存，資料僅供本次使用');
+}
+
+function saveSession(){
+  if(!currentKey) return;
+  try{
+    localStorage.setItem(currentKey, JSON.stringify(counts));
+    updateSaveIndicator('已自動儲存 ' + new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
+    storageOK = true;
+  }catch(e){
+    updateSaveIndicator('儲存失敗（此瀏覽器可能封鎖本機儲存）');
+    storageOK = false;
+  }
+  refreshSessionList();
+}
+
+function queueSave(){
+  updateSaveIndicator('儲存中…');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveSession, 400);
+}
+function updateSaveIndicator(text){ $('#saveIndicator').textContent = text; }
+
+function refreshSessionList(){
+  const sel = $('#sessionSelect');
+  let keys = [];
+  try{
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.indexOf('tableware-count:') === 0) keys.push(k.replace('tableware-count:', ''));
+    }
+  }catch(e){ keys = []; }
+  keys.sort().reverse();
+  sel.innerHTML = '';
+  if(keys.length === 0){
+    const opt = document.createElement('option');
+    opt.value = ''; opt.textContent = '（尚無盤點紀錄）';
+    sel.appendChild(opt);
+    return;
+  }
+  keys.forEach(dateStr => {
+    const opt = document.createElement('option');
+    opt.value = dateStr;
+    opt.textContent = dateStr;
+    sel.appendChild(opt);
+  });
+  const cur = currentKey ? currentKey.replace('tableware-count:', '') : '';
+  if([...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+
+function categoryStats(catKey){
+  const items = ITEMS.filter(i => i.cat === catKey);
+  let filled = 0, value = 0;
+  items.forEach(i => {
+    const q = counts[i.id];
+    if(q !== undefined && q !== null && q !== ''){
+      filled++;
+      if(i.price) value += Number(q) * i.price;
+    }
+  });
+  return {total: items.length, filled, value};
+}
+function overallStats(){
+  let filled = 0, value = 0;
+  ITEMS.forEach(i => {
+    const q = counts[i.id];
+    if(q !== undefined && q !== null && q !== ''){
+      filled++;
+      if(i.price) value += Number(q) * i.price;
+    }
+  });
+  return {total: ITEMS.length, filled, value};
+}
+function matchesFilter(item){
+  if(activeCategory !== 'all' && item.cat !== activeCategory) return false;
+  if(searchTerm && !item.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+  return true;
+}
+function renderChips(){
+  const row = $('#chipRow');
+  row.innerHTML = '';
+  const allChip = document.createElement('div');
+  allChip.className = 'chip' + (activeCategory === 'all' ? ' active' : '');
+  allChip.textContent = '全部';
+  allChip.onclick = () => { activeCategory = 'all'; render(); };
+  row.appendChild(allChip);
+  CATEGORIES.forEach(c => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (activeCategory === c.key ? ' active' : '');
+    chip.textContent = c.label;
+    chip.onclick = () => { activeCategory = c.key; render(); };
+    row.appendChild(chip);
+  });
+}
+function makeRow(item){
+  const row = document.createElement('div');
+  const qtyVal = counts[item.id];
+  const hasQty = qtyVal !== undefined && qtyVal !== null && qtyVal !== '';
+  row.className = 'item-row' + (hasQty ? ' filled' : '') + (item.flag ? ' flag' : '');
+
+  const nameWrap = document.createElement('div');
+  const nameEl = document.createElement('div');
+  nameEl.className = 'item-name';
+  nameEl.textContent = item.name;
+  if(item.flag){
+    const tag = document.createElement('span');
+    tag.className = 'flag-tag';
+    tag.textContent = item.flag;
+    nameEl.appendChild(tag);
+  }
+  const priceEl = document.createElement('div');
+  priceEl.className = 'item-price';
+  const priceLabel = document.createElement('span');
+  priceLabel.textContent = '單價 $';
+  const priceInput = document.createElement('input');
+  priceInput.className = 'price-input'; priceInput.type = 'number'; priceInput.inputMode = 'decimal';
+  priceInput.placeholder = '未標示';
+  priceInput.value = (item.price === null || item.price === undefined) ? '' : item.price;
+  priceInput.onchange = () => { updateItemPrice(item.id, priceInput.value === '' ? '' : Number(priceInput.value)); render(true); };
+  priceEl.appendChild(priceLabel);
+  priceEl.appendChild(priceInput);
+  nameWrap.appendChild(nameEl);
+  nameWrap.appendChild(priceEl);
+
+  const catSelect = document.createElement('select');
+  catSelect.className = 'cat-select';
+  CATEGORIES.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.key; opt.textContent = c.label;
+    if(c.key === item.cat) opt.selected = true;
+    catSelect.appendChild(opt);
+  });
+  catSelect.onchange = () => {
+    item.cat = catSelect.value;
+    saveCatalog();
+    render();
+  };
+  nameWrap.appendChild(catSelect);
+
+  const qtyWrap = document.createElement('div');
+  qtyWrap.className = 'qty-control';
+  const minus = document.createElement('button');
+  minus.className = 'qty-btn'; minus.textContent = '−'; minus.type = 'button';
+  minus.onclick = () => { const cur = Number(counts[item.id] || 0); setQty(item.id, Math.max(0, cur - 1)); };
+  const input = document.createElement('input');
+  input.className = 'qty-input'; input.type = 'number'; input.inputMode = 'numeric';
+  input.placeholder = '未盤';
+  input.value = hasQty ? qtyVal : '';
+  input.oninput = () => setQty(item.id, input.value === '' ? '' : Number(input.value));
+  const plus = document.createElement('button');
+  plus.className = 'qty-btn'; plus.textContent = '+'; plus.type = 'button';
+  plus.onclick = () => { const cur = Number(counts[item.id] || 0); setQty(item.id, cur + 1); };
+  qtyWrap.appendChild(minus); qtyWrap.appendChild(input); qtyWrap.appendChild(plus);
+
+  const amountEl = document.createElement('div');
+  if(hasQty && item.price){
+    amountEl.className = 'item-amount';
+    amountEl.textContent = fmtMoney(Number(qtyVal) * item.price);
+  } else {
+    amountEl.className = 'item-amount empty';
+    amountEl.textContent = '—';
+  }
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'del-btn'; delBtn.type = 'button'; delBtn.textContent = '×';
+  delBtn.setAttribute('aria-label', '刪除' + item.name);
+  delBtn.onclick = () => {
+    if(!confirm('確定要刪除「' + item.name + '」嗎？此動作無法復原。')) return;
+    deleteItem(item.id);
+    render();
+  };
+
+  row.appendChild(nameWrap);
+  row.appendChild(qtyWrap);
+  row.appendChild(amountEl);
+  row.appendChild(delBtn);
+  return row;
+}
+function setQty(id, val){
+  counts[id] = val;
+  queueSave();
+  render(true);
+}
+function render(skipChips){
+  if(!skipChips) renderChips();
+  const container = $('#categoryContainer');
+  container.innerHTML = '';
+  let anyVisible = false;
+  CATEGORIES.forEach(cat => {
+    const items = ITEMS.filter(i => i.cat === cat.key && matchesFilter(i));
+    if(items.length === 0) return;
+    anyVisible = true;
+    const stats = categoryStats(cat.key);
+    const section = document.createElement('div');
+    section.className = 'category';
+    const head = document.createElement('div');
+    head.className = 'category-head';
+    head.style.setProperty('--cat-color', cat.color);
+    const h2 = document.createElement('h2'); h2.textContent = cat.label;
+    const sub = document.createElement('div'); sub.className = 'sub';
+    sub.textContent = stats.filled + '/' + stats.total + ' 項 · ' + fmtMoney(stats.value);
+    head.appendChild(h2); head.appendChild(sub);
+    const list = document.createElement('div'); list.className = 'item-list';
+    items.forEach(i => list.appendChild(makeRow(i)));
+    section.appendChild(head);
+    section.appendChild(list);
+    container.appendChild(section);
+  });
+  $('#emptyState').style.display = anyVisible ? 'none' : 'block';
+  const stats = overallStats();
+  $('#statCount').textContent = stats.filled;
+  $('#statTotal').textContent = stats.total;
+  $('#statValue').textContent = fmtMoney(stats.value);
+  $('#progressFill').style.width = (stats.total ? (stats.filled/stats.total*100) : 0) + '%';
+}
+function toCSV(){
+  const rows = [['品項','分類','單價','盤點數量','金額']];
+  ITEMS.forEach(i => {
+    const catLabel = CATEGORIES.find(c => c.key === i.cat).label;
+    const q = counts[i.id];
+    const qty = (q === undefined || q === null || q === '') ? '' : q;
+    const amount = (qty !== '' && i.price) ? (Number(qty) * i.price) : '';
+    rows.push([i.name, catLabel, i.price ?? '', qty, amount]);
+  });
+  return rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+}
+function exportCSV(){
+  const csv = '\uFEFF' + toCSV();
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '餐具盤點_' + ($('#dateInput').value || todayStr()) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function renderCatManageList(){
+  const wrap = $('#catManageList');
+  wrap.innerHTML = '';
+  CATEGORIES.forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'cat-manage-row';
+    const swatch = document.createElement('div');
+    swatch.className = 'cat-swatch';
+    swatch.style.background = c.color;
+    const input = document.createElement('input');
+    input.type = 'text'; input.value = c.label;
+    input.onchange = () => {
+      const val = input.value.trim();
+      if(!val){ input.value = c.label; return; }
+      renameCategory(c.key, val);
+      render(true);
+    };
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'del-btn del-btn-inline'; del.textContent = '×';
+    del.setAttribute('aria-label', '刪除分類 ' + c.label);
+    del.onclick = () => {
+      if(CATEGORIES.length <= 1){ alert('至少要保留一個分類。'); return; }
+      if(!confirm('刪除「' + c.label + '」分類後，裡面的品項會移到「未分類」，確定要刪除嗎？')) return;
+      deleteCategory(c.key);
+      renderCatManageList();
+      render();
+    };
+    row.appendChild(swatch); row.appendChild(input); row.appendChild(del);
+    wrap.appendChild(row);
+  });
+}
+
+function renderItemManageList(){
+  const wrap = $('#itemManageList');
+  wrap.innerHTML = '';
+  ITEMS.slice().sort((a,b) => a.name.localeCompare(b.name, 'zh-Hant')).forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'item-manage-row';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text'; nameInput.value = item.name;
+    nameInput.onchange = () => { updateItemName(item.id, nameInput.value); };
+
+    const priceInput = document.createElement('input');
+    priceInput.type = 'number'; priceInput.placeholder = '未標價';
+    priceInput.value = (item.price === null || item.price === undefined) ? '' : item.price;
+    priceInput.onchange = () => { updateItemPrice(item.id, priceInput.value === '' ? '' : Number(priceInput.value)); };
+
+    const catSelect = document.createElement('select');
+    CATEGORIES.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.key; opt.textContent = c.label;
+      if(c.key === item.cat) opt.selected = true;
+      catSelect.appendChild(opt);
+    });
+    catSelect.onchange = () => { updateItemCat(item.id, catSelect.value); };
+
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'del-btn del-btn-inline'; del.textContent = '×';
+    del.setAttribute('aria-label', '刪除' + item.name);
+    del.onclick = () => {
+      if(!confirm('確定要刪除「' + item.name + '」嗎？此動作無法復原。')) return;
+      deleteItem(item.id);
+      renderItemManageList();
+      populateRestockItemSelect();
+    };
+
+    row.appendChild(nameInput); row.appendChild(priceInput); row.appendChild(catSelect); row.appendChild(del);
+    wrap.appendChild(row);
+  });
+}
+
+function populateRestockItemSelect(){
+  const sel = $('#restockItem');
+  if(!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  ITEMS.slice().sort((a,b) => a.name.localeCompare(b.name, 'zh-Hant')).forEach(i => {
+    const opt = document.createElement('option');
+    opt.value = i.id; opt.textContent = i.name;
+    sel.appendChild(opt);
+  });
+  if([...sel.options].some(o => o.value === prev)) sel.value = prev;
+}
+
+function renderRestockList(){
+  const wrap = $('#restockList');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  const sorted = restocks.slice().sort((a,b) => b.date.localeCompare(a.date));
+  if(sorted.length === 0){
+    wrap.innerHTML = '<div style="font-size:12.5px;color:var(--ink-faint);text-align:center;padding:10px 0;">尚無進貨紀錄</div>';
+    return;
+  }
+  sorted.forEach(r => {
+    const item = ITEMS.find(i => i.id === r.itemId);
+    const row = document.createElement('div');
+    row.className = 'restock-row';
+    const main = document.createElement('div');
+    main.className = 'rr-main';
+    main.innerHTML = '<div class="rr-date">' + r.date + '</div><div>' + (item ? item.name : '（已刪除品項）') + '　數量 ' + r.qty
+      + (r.unitCost ? '　單位成本 ' + fmtMoney(r.unitCost) : '') + (r.note ? '　備註：' + r.note : '') + '</div>';
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'del-btn del-btn-inline'; del.textContent = '×';
+    del.onclick = () => {
+      if(!confirm('確定要刪除這筆進貨紀錄嗎？')) return;
+      deleteRestock(r.id);
+      renderRestockList();
+    };
+    row.appendChild(main); row.appendChild(del);
+    wrap.appendChild(row);
+  });
+}
+
+
+function populateCatSelect(){
+  const sel = $('#newItemCat');
+  sel.innerHTML = '';
+  CATEGORIES.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.key; opt.textContent = c.label;
+    sel.appendChild(opt);
+  });
+}
+
+function switchPage(page){
+  $('#page-count').style.display = page === 'count' ? 'block' : 'none';
+  $('#page-admin').style.display = page === 'admin' ? 'block' : 'none';
+  $('#page-analytics').style.display = page === 'analytics' ? 'block' : 'none';
+  if(page === 'admin'){
+    populateCatSelect();
+    renderCatManageList();
+    renderItemManageList();
+    populateRestockItemSelect();
+    renderRestockList();
+  }
+  if(page === 'analytics'){
+    renderAnalytics($('#analyticsMonth').value);
+  }
+  window.scrollTo(0,0);
+}
+
+function monthStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function shiftMonth(ym, delta){
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function restocksForMonth(ym){
+  return restocks.filter(r => r.date.slice(0,7) === ym);
+}
+function restockTotals(ym){
+  const list = restocksForMonth(ym);
+  let qty = 0, cost = 0;
+  list.forEach(r => { qty += Number(r.qty || 0); if(r.unitCost) cost += Number(r.qty || 0) * Number(r.unitCost); });
+  return {qty, cost};
+}
+function latestSessionInMonth(ym){
+  let keys = [];
+  try{
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.indexOf('tableware-count:') === 0){
+        const d = k.replace('tableware-count:', '');
+        if(d.slice(0,7) === ym) keys.push(d);
+      }
+    }
+  }catch(e){ keys = []; }
+  if(keys.length === 0) return null;
+  keys.sort();
+  return keys[keys.length - 1];
+}
+function renderAnalytics(ym){
+  const cur = restockTotals(ym);
+  const prevYm = shiftMonth(ym, -1);
+  const prev = restockTotals(prevYm);
+
+  $('#anaRestockQty').textContent = cur.qty.toLocaleString('en-US');
+  $('#anaRestockCost').textContent = fmtMoney(cur.cost);
+
+  const deltaText = (curV, prevV) => {
+    if(prevV === 0 && curV === 0) return '上月無資料可比較';
+    const diff = curV - prevV;
+    const sign = diff > 0 ? '▲' : (diff < 0 ? '▼' : '持平');
+    return '較上月 ' + sign + ' ' + Math.abs(diff).toLocaleString('en-US');
+  };
+  const qtyDeltaEl = $('#anaRestockQtyDelta');
+  qtyDeltaEl.textContent = deltaText(cur.qty, prev.qty);
+  qtyDeltaEl.className = 'delta ' + (cur.qty >= prev.qty ? 'up' : 'down');
+  const costDeltaEl = $('#anaRestockCostDelta');
+  costDeltaEl.textContent = deltaText(cur.cost, prev.cost);
+  costDeltaEl.className = 'delta ' + (cur.cost >= prev.cost ? 'up' : 'down');
+
+  const invWrap = $('#anaInventorySummary');
+  const sessionDate = latestSessionInMonth(ym);
+  if(!sessionDate){
+    invWrap.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);text-align:center;padding:14px 0;">這個月還沒有盤點紀錄。</div>';
+  } else {
+    let sessionCounts = {};
+    try{ sessionCounts = JSON.parse(localStorage.getItem('tableware-count:' + sessionDate) || '{}'); }catch(e){}
+    let filled = 0, value = 0;
+    const catValue = {};
+    ITEMS.forEach(i => {
+      const q = sessionCounts[i.id];
+      if(q !== undefined && q !== null && q !== ''){
+        filled++;
+        const amt = i.price ? Number(q) * i.price : 0;
+        value += amt;
+        catValue[i.cat] = (catValue[i.cat] || 0) + amt;
+      }
+    });
+    let html = '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">最近一次盤點日期：' + sessionDate + '　（已盤點 ' + filled + ' / ' + ITEMS.length + ' 項，總值 ' + fmtMoney(value) + '）</div>';
+    const maxCatVal = Math.max(1, ...CATEGORIES.map(c => catValue[c.key] || 0));
+    CATEGORIES.forEach(c => {
+      const v = catValue[c.key] || 0;
+      if(v === 0) return;
+      html += '<div class="bar-row"><div class="bar-label"><span>' + c.label + '</span><span>' + fmtMoney(v) + '</span></div>'
+        + '<div class="bar-track"><div class="bar-fill" style="width:' + (v/maxCatVal*100) + '%;background:' + c.color + ';"></div></div></div>';
+    });
+    invWrap.innerHTML = html;
+  }
+
+  const barsWrap = $('#anaRestockBars');
+  const monthList = restocksForMonth(ym);
+  if(monthList.length === 0){
+    barsWrap.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);text-align:center;padding:14px 0;">這個月還沒有進貨紀錄。</div>';
+  } else {
+    const byItem = {};
+    monthList.forEach(r => { byItem[r.itemId] = (byItem[r.itemId] || 0) + Number(r.qty || 0); });
+    const entries = Object.entries(byItem).sort((a,b) => b[1] - a[1]);
+    const maxQty = Math.max(1, ...entries.map(e => e[1]));
+    let html = '';
+    entries.forEach(([itemId, qty]) => {
+      const item = ITEMS.find(i => i.id === itemId);
+      const name = item ? item.name : '（已刪除品項）';
+      html += '<div class="bar-row"><div class="bar-label"><span>' + name + '</span><span>' + qty + '</span></div>'
+        + '<div class="bar-track"><div class="bar-fill" style="width:' + (qty/maxQty*100) + '%;"></div></div></div>';
+    });
+    barsWrap.innerHTML = html;
+  }
+}
+
+function init(){
+  const notice = document.getElementById('staticNotice');
+  if(notice) notice.style.display = 'none';
+
+  loadCategories();
+  loadCatalog();
+  loadRestocks();
+  populateCatSelect();
+
+  const dateInput = $('#dateInput');
+  dateInput.value = todayStr();
+  loadSession(dateInput.value);
+  refreshSessionList();
+  dateInput.onchange = () => { loadSession(dateInput.value); refreshSessionList(); };
+  $('#sessionSelect').onchange = (e) => {
+    if(!e.target.value) return;
+    dateInput.value = e.target.value;
+    loadSession(e.target.value);
+    refreshSessionList();
+  };
+  $('#searchInput').oninput = (e) => { searchTerm = e.target.value; render(true); };
+  $('#exportBtn').onclick = exportCSV;
+  $('#resetBtn').onclick = () => {
+    if(!confirm('確定要清空目前這次盤點的所有數量嗎？此動作無法復原。')) return;
+    counts = {};
+    saveSession();
+    render();
+  };
+
+  $('#openAdminBtn').onclick = () => switchPage('admin');
+  $('#backToCountBtn').onclick = () => { switchPage('count'); render(); };
+  $('#openAnalyticsBtn').onclick = () => {
+    $('#analyticsMonth').value = monthStr();
+    switchPage('analytics');
+  };
+  $('#backFromAnalyticsBtn').onclick = () => { switchPage('count'); render(); };
+  $('#analyticsMonth').onchange = (e) => renderAnalytics(e.target.value);
+
+  $('#cancelAddBtn').onclick = () => {
+    $('#newItemName').value = ''; $('#newItemPrice').value = '';
+  };
+  $('#confirmAddBtn').onclick = () => {
+    const nameInput = $('#newItemName');
+    const name = nameInput.value.trim();
+    if(!name){ nameInput.focus(); nameInput.style.borderColor = 'var(--red)'; return; }
+    nameInput.style.borderColor = '';
+    const price = $('#newItemPrice').value;
+    const cat = $('#newItemCat').value;
+    addNewItem(name, price, cat);
+    nameInput.value = ''; $('#newItemPrice').value = '';
+    activeCategory = cat;
+    renderItemManageList();
+    populateRestockItemSelect();
+  };
+
+  $('#confirmAddCatBtn').onclick = () => {
+    const input = $('#newCatName');
+    const label = input.value.trim();
+    if(!label){ input.focus(); input.style.borderColor = 'var(--red)'; return; }
+    input.style.borderColor = '';
+    addCategory(label);
+    input.value = '';
+    populateCatSelect();
+    renderCatManageList();
+    renderItemManageList();
+  };
+
+  $('#restockDate').value = todayStr();
+  $('#confirmRestockBtn').onclick = () => {
+    const date = $('#restockDate').value || todayStr();
+    const itemId = $('#restockItem').value;
+    const qtyInput = $('#restockQty');
+    const qty = Number(qtyInput.value);
+    if(!itemId || !qty || qty <= 0){ qtyInput.focus(); qtyInput.style.borderColor = 'var(--red)'; return; }
+    qtyInput.style.borderColor = '';
+    const costVal = $('#restockCost').value;
+    const note = $('#restockNote').value.trim();
+    addRestock({date, itemId, qty, unitCost: costVal === '' ? null : Number(costVal), note});
+    qtyInput.value = ''; $('#restockCost').value = ''; $('#restockNote').value = '';
+    renderRestockList();
+  };
+
+  $('#restoreBtn').onclick = () => {
+    if(!confirm('確定要把品項清單與分類都還原成原始預設值嗎？你新增或修改的內容會消失（盤點數量與進貨紀錄不受影響）。')) return;
+    ITEMS = DEFAULT_ITEMS.map(i => ({...i}));
+    CATEGORIES = DEFAULT_CATEGORIES.map(c => ({...c}));
+    saveCatalog();
+    saveCategories();
+    populateCatSelect();
+    renderCatManageList();
+    renderItemManageList();
+    populateRestockItemSelect();
+  };
+}
+init();
+</script>
+</body>
+</html>
